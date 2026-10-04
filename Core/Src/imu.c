@@ -39,3 +39,16 @@ HAL_StatusTypeDef imu_configure_accelerometer(IMU_LA_ODR_Setting odr, IMU_LA_FS_
 	uint8_t val = (uint8_t) (odr | fs | lpf2);
 	return imu_write_reg(IMU_REG_CTRL1_XL, val);
 }
+
+HAL_StatusTypeDef imu_configure_gyroscope(IMU_G_ODR_Setting odr, IMU_G_FS_Setting fs) {
+	uint8_t val = (uint8_t) (odr | fs);
+	return imu_write_reg(IMU_REG_CTRL2_G, val);
+}
+
+HAL_StatusTypeDef imu_enable_bdu(void) {
+	uint8_t val;
+	HAL_StatusTypeDef status = imu_read_reg(IMU_REG_CTRL3_C, &val);
+	if(status != HAL_OK) return status;
+	val |= IMU_REG_CTRL3_C_BDU;
+	return imu_write_reg(IMU_REG_CTRL3_C, val);
+}

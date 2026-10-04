@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdbool.h>
 extern void initialise_monitor_handles(void);
 #include "imu.h"
 /* USER CODE END Includes */
@@ -92,24 +93,26 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_Delay(50);
+  bool startupFailed = false;
+  uint8_t id = 0;
+  startupFailed |= (imu_read_reg(IMU_REG_WHO_AM_I, &id) != HAL_OK);
+  startupFailed |= (id != IMU_REG_WHO_AM_I_EXPECTED);
+  startupFailed |= (imu_enable_bdu() != HAL_OK);
+  startupFailed |= (imu_configure_accelerometer(LA_ODR_6, LA_FS_8G, LA_LPF2_OFF) != HAL_OK);
+  startupFailed |= (imu_configure_gyroscope(G_ODR_6, G_FS_1000) != HAL_OK);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  if(startupFailed) {
+	  Error_Handler();
+  }
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	uint8_t id;
-	HAL_StatusTypeDef st = imu_read_reg(IMU_REG_WHO_AM_I, &id);
-	if(st != HAL_OK) {
-		printf("SPI Error: %d\n", st);
-	} else {
-		printf("WHO_AM_I: 0x%02X\n", id);
-	}
-	HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
@@ -205,7 +208,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(IMU_CS_GPIO_Port, IMU_CS_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(IMU_CS_GPIO_Port, IMU_CS_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin : IMU_CS_Pin */
   GPIO_InitStruct.Pin = IMU_CS_Pin;
