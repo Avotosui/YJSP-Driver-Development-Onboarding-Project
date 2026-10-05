@@ -34,12 +34,12 @@ extern void initialise_monitor_handles(void);
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define LOOP_FREQUENCY_HZ 200
+#define LOOP_PERIOD_MS (1000 / LOOP_FREQUENCY_HZ) // 200 Hz -> 5 * 10^-3 s -> 5 ms
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -116,21 +116,26 @@ int main(void)
   if(startupFailed) {
 	  Error_Handler();
   }
+  uint32_t next = HAL_GetTick();
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	next += LOOP_PERIOD_MS;
 	IMU_READING reading = imu_read_all(LA_FSR, G_FSR);
 	if(reading.ERROR) {
-		printf("IMU READING ERROR!");
+		printf("IMU READING ERROR!\n");
 	} else {
-		printf("Temperature: %d\n", reading.TEMP);
-		printf("Linear Acceleration: (%f, %f, %f)\n", reading.LA_X, reading.LA_Y, reading.LA_Z);
-		printf("Angular Velocity: (%f, %f, %f)\n", reading.G_X, reading.G_Y, reading.G_Z);
-		printf("\n");
+		printf("Accel: (%d, %d, %d) mm/s^2 | Gyro: (%d, %d, %d) mrad/s\n",
+				(int)(reading.LA_X * 1000.0f),
+				(int)(reading.LA_Y * 1000.0f),
+				(int)(reading.LA_Z * 1000.0f),
+				(int)(reading.G_X * 1000.0f),
+				(int)(reading.G_Y * 1000.0f),
+				(int)(reading.G_Z * 1000.0f));
 	}
-	HAL_Delay(500);
+	while((int32_t)(HAL_GetTick() - next) < 0);
   }
   /* USER CODE END 3 */
 }
