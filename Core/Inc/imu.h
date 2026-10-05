@@ -1,15 +1,44 @@
 #ifndef IMU_H
 #define IMU_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include "main.h"
 
 #define IMU_REG_WHO_AM_I 0x0F
 #define IMU_REG_WHO_AM_I_EXPECTED 0x6B
+
 #define IMU_REG_CTRL1_XL 0x10 // Accelerometer Settings
 #define IMU_REG_CTRL2_G 0x11 // Gyroscope Settings
 #define IMU_REG_CTRL3_C 0x12 // Some general settings, but also includes Block Data Update
 #define IMU_REG_CTRL3_C_BDU (1 << 6) // BDU bit
+
+#define IMU_IDX_OUT_TEMP_L 0
+#define IMU_IDX_OUT_TEMP_H 1
+#define IMU_IDX_OUTX_L_G 2
+#define IMU_IDX_OUTX_H_G 3
+#define IMU_IDX_OUTY_L_G 4
+#define IMU_IDX_OUTY_H_G 5
+#define IMU_IDX_OUTZ_L_G 6
+#define IMU_IDX_OUTZ_H_G 7
+#define IMU_IDX_OUTX_L_A 8
+#define IMU_IDX_OUTX_H_A 9
+#define IMU_IDX_OUTY_L_A 10
+#define IMU_IDX_OUTY_H_A 11
+#define IMU_IDX_OUTZ_L_A 12
+#define IMU_IDX_OUTZ_H_A 13
+
+// for burst read
+#define ALL_READ_START 0x20 // OUT_TEMP_L register
+#define ALL_READ_LENGTH 14
+
+#define TEMPERATURE_OFFSET 25.0f
+#define TEMPERATURE_SENSITIVITY (1.0f / 256.0f) // 256 LSB/degrees Celsius
+#define SENSITIVITY_CONVERSION_FAIL (-1.0)
+
+// conversions
+#define MG_TO_MS2 0.00980665f
+#define MDPS_TO_RADS 0.0000174533f
 
 /*
  * Linear acceleration ODR
@@ -44,18 +73,18 @@ typedef enum
 	LA_FS_16G = 0x04 // 0000 01 00
 } IMU_LA_FS_Setting;
 
-double LA_FS_to_Sensitivity(IMU_LA_FS_Setting setting) {
+static inline float LA_FS_to_Sensitivity(IMU_LA_FS_Setting setting) {
 	switch (setting) {
 	case LA_FS_2G:
-		return 2.0 / 65536;
+		return 0.061f * MG_TO_MS2;
 	case LA_FS_4G:
-		return 4.0 / 65536;
+		return 0.122f * MG_TO_MS2;
 	case LA_FS_8G:
-		return 8.0 / 65536;
+		return 0.244f * MG_TO_MS2;
 	case LA_FS_16G:
-		return 16.0 / 65536;
+		return 0.488f * MG_TO_MS2;
 	default:
-		return -1.0;
+		return SENSITIVITY_CONVERSION_FAIL;
 	}
 }
 
@@ -99,20 +128,32 @@ typedef enum
 	G_FS_2000 = 0x0C, // 0000 11 00
 } IMU_G_FS_Setting;
 
-double G_FS_to_Sensitivity(IMU_G_FS_Setting setting) {
+static inline float G_FS_to_Sensitivity(IMU_G_FS_Setting setting) {
 	switch (setting) {
 	case G_FS_250:
-		return 250.0 / 65536;
+		return 8.75f * MDPS_TO_RADS;
 	case G_FS_500:
-		return 500.0 / 65536;
+		return 17.50f * MDPS_TO_RADS;
 	case G_FS_1000:
-		return 1000.0 / 65536;
+		return 35.0f * MDPS_TO_RADS;
 	case G_FS_2000:
-		return 2000.0 / 65536;
+		return 70.0f * MDPS_TO_RADS;
 	default:
-		return -1.0;
+		return SENSITIVITY_CONVERSION_FAIL;
 	}
 }
+
+typedef struct
+{
+	bool ERROR;
+	float TEMP; // in Celsius
+	float LA_X; // in m/s^2
+	float LA_Y; // in m/s^2
+	float LA_Z; // in m/s^2
+	float G_X; // in rad/s
+	float G_Y; // in rad/s
+	float G_Z; // in rad/s
+} IMU_READING;
 
 HAL_StatusTypeDef imu_read_reg(uint8_t reg, uint8_t* val);
 HAL_StatusTypeDef imu_write_reg(uint8_t reg, uint8_t val);
@@ -122,6 +163,8 @@ HAL_StatusTypeDef imu_burst_read_regs(uint8_t startReg, uint8_t* buf, uint16_t l
 HAL_StatusTypeDef imu_configure_accelerometer(IMU_LA_ODR_Setting odr, IMU_LA_FS_Setting fs, IMU_LA_LPF2_Setting lpf2);
 HAL_StatusTypeDef imu_configure_gyroscope(IMU_G_ODR_Setting odr, IMU_G_FS_Setting fs);
 
-HAL_StatusTypeDef imu_enable_bdu();
+HAL_StatusTypeDef imu_enable_bdu(void);
+
+IMU_READING imu_read_all(IMU_LA_FS_Setting fsLA, IMU_G_FS_Setting fsG);
 
 #endif

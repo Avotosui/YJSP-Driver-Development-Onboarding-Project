@@ -52,3 +52,26 @@ HAL_StatusTypeDef imu_enable_bdu(void) {
 	val |= IMU_REG_CTRL3_C_BDU;
 	return imu_write_reg(IMU_REG_CTRL3_C, val);
 }
+
+IMU_READING imu_read_all(IMU_LA_FS_Setting fsLA, IMU_G_FS_Setting fsG) {
+	uint8_t raw[ALL_READ_LENGTH] = { 0 };
+	IMU_READING reading = { 0 };
+	HAL_StatusTypeDef st = imu_burst_read_regs(ALL_READ_START, raw, ALL_READ_LENGTH);
+	float gs = G_FS_to_Sensitivity(fsG);
+	float as = LA_FS_to_Sensitivity(fsLA);
+	reading.ERROR = true;
+	if(st != HAL_OK || gs == SENSITIVITY_CONVERSION_FAIL || as == SENSITIVITY_CONVERSION_FAIL) return reading;
+
+	#define RAW16(h, l) ((int16_t) (((uint16_t) raw[h] << 8) | raw[l]))
+	reading.TEMP = TEMPERATURE_OFFSET + RAW16(IMU_IDX_OUT_TEMP_H, IMU_IDX_OUT_TEMP_L) * TEMPERATURE_SENSITIVITY;
+	reading.G_X = RAW16(IMU_IDX_OUTX_H_G, IMU_IDX_OUTX_L_G) * gs;
+	reading.G_Y = RAW16(IMU_IDX_OUTY_H_G, IMU_IDX_OUTY_L_G) * gs;
+	reading.G_Z = RAW16(IMU_IDX_OUTZ_H_G, IMU_IDX_OUTZ_L_G) * gs;
+	reading.LA_X = RAW16(IMU_IDX_OUTX_H_A, IMU_IDX_OUTX_L_A) * as;
+	reading.LA_Y = RAW16(IMU_IDX_OUTY_H_A, IMU_IDX_OUTY_L_A) * as;
+	reading.LA_Z = RAW16(IMU_IDX_OUTZ_H_A, IMU_IDX_OUTZ_L_A) * as;
+	#undef RAW16
+
+	reading.ERROR = false;
+	return reading;
+}

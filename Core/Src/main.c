@@ -100,7 +100,7 @@ int main(void)
   IMU_LA_FS_Setting LA_FSR = LA_FS_8G;
   IMU_LA_LPF2_Setting LA_LPF2 = LA_LPF2_OFF;
   IMU_G_ODR_Setting G_ODR = G_ODR_6;
-  IMU_G_FS_Setting G_FS = G_FS_1000;
+  IMU_G_FS_Setting G_FSR = G_FS_1000;
 
   bool startupFailed = false;
   uint8_t id = 0;
@@ -108,7 +108,7 @@ int main(void)
   startupFailed |= (id != IMU_REG_WHO_AM_I_EXPECTED);
   startupFailed |= (imu_enable_bdu() != HAL_OK);
   startupFailed |= (imu_configure_accelerometer(LA_ODR, LA_FSR, LA_LPF2) != HAL_OK);
-  startupFailed |= (imu_configure_gyroscope(G_ODR, G_FS) != HAL_OK);
+  startupFailed |= (imu_configure_gyroscope(G_ODR, G_FSR) != HAL_OK);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,7 +121,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	// read loop
+	IMU_READING reading = imu_read_all(LA_FSR, G_FSR);
+	if(reading.ERROR) {
+		printf("IMU READING ERROR!");
+	} else {
+		printf("Temperature: %d\n", reading.TEMP);
+		printf("Linear Acceleration: (%f, %f, %f)\n", reading.LA_X, reading.LA_Y, reading.LA_Z);
+		printf("Angular Velocity: (%f, %f, %f)\n", reading.G_X, reading.G_Y, reading.G_Z);
+		printf("\n");
+	}
+	HAL_Delay(500);
   }
   /* USER CODE END 3 */
 }
