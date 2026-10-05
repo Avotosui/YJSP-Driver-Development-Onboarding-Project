@@ -93,14 +93,22 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(50);
+  HAL_Delay(50); // boot delay
+
+  // settings
+  IMU_LA_ODR_Setting LA_ODR = LA_ODR_6;
+  IMU_LA_FS_Setting LA_FSR = LA_FS_8G;
+  IMU_LA_LPF2_Setting LA_LPF2 = LA_LPF2_OFF;
+  IMU_G_ODR_Setting G_ODR = G_ODR_6;
+  IMU_G_FS_Setting G_FS = G_FS_1000;
+
   bool startupFailed = false;
   uint8_t id = 0;
   startupFailed |= (imu_read_reg(IMU_REG_WHO_AM_I, &id) != HAL_OK);
   startupFailed |= (id != IMU_REG_WHO_AM_I_EXPECTED);
   startupFailed |= (imu_enable_bdu() != HAL_OK);
-  startupFailed |= (imu_configure_accelerometer(LA_ODR_6, LA_FS_8G, LA_LPF2_OFF) != HAL_OK);
-  startupFailed |= (imu_configure_gyroscope(G_ODR_6, G_FS_1000) != HAL_OK);
+  startupFailed |= (imu_configure_accelerometer(LA_ODR, LA_FSR, LA_LPF2) != HAL_OK);
+  startupFailed |= (imu_configure_gyroscope(G_ODR, G_FS) != HAL_OK);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,6 +121,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	// read loop
   }
   /* USER CODE END 3 */
 }

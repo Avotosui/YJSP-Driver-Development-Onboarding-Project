@@ -44,6 +44,21 @@ typedef enum
 	LA_FS_16G = 0x04 // 0000 01 00
 } IMU_LA_FS_Setting;
 
+double LA_FS_to_Sensitivity(IMU_LA_FS_Setting setting) {
+	switch (setting) {
+	case LA_FS_2G:
+		return 2.0 / 65536;
+	case LA_FS_4G:
+		return 4.0 / 65536;
+	case LA_FS_8G:
+		return 8.0 / 65536;
+	case LA_FS_16G:
+		return 16.0 / 65536;
+	default:
+		return -1.0;
+	}
+}
+
 // whether to output from LPF2 second stage or not (default: disabled -> output from first-stage digital filter)
 typedef enum
 {
@@ -83,6 +98,21 @@ typedef enum
 	G_FS_1000 = 0x08, // 0000 10 00
 	G_FS_2000 = 0x0C, // 0000 11 00
 } IMU_G_FS_Setting;
+
+double G_FS_to_Sensitivity(IMU_G_FS_Setting setting) {
+	switch (setting) {
+	case G_FS_250:
+		return 250.0 / 65536;
+	case G_FS_500:
+		return 500.0 / 65536;
+	case G_FS_1000:
+		return 1000.0 / 65536;
+	case G_FS_2000:
+		return 2000.0 / 65536;
+	default:
+		return -1.0;
+	}
+}
 
 HAL_StatusTypeDef imu_read_reg(uint8_t reg, uint8_t* val);
 HAL_StatusTypeDef imu_write_reg(uint8_t reg, uint8_t val);
